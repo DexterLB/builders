@@ -92,8 +92,6 @@ libraries = '''
 mbed
 '''.split()
 
-
-# additional options (e.g. '-I/path/to/mydir', '-lmylib')
 defines = '''
 TARGET_LPC1768
 DEVICE_ERROR_PATTERN=1
