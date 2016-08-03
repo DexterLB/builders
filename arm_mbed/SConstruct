@@ -1,0 +1,304 @@
+import itertools
+
+# This SConstruct helps build ARM
+# projects easier with the GCC tools.
+#
+# It supports C, C++ and Assembly source files
+#
+# It contains the following targets:
+# scons             : builds everything
+# scons elf         : builds only the elf file
+# scons hex         : builds the hex file
+# scons disasm      : builds .s (disassembly)
+# scons size        : shows size information
+
+# -------- configuration options ---------
+
+# project name (use a single word, e.g. "myprj")
+pname = 'bleh'
+
+# target architecture (e.g. cortex-m3)
+cpu = 'cortex-m3'
+
+# optimisation level
+# can be 's' (size opt), '1', '2', '3' or '0' (not advised)
+# when debugging, it might be useful to set it to 1 or 0
+optlevel = '1'
+
+# save debug info to .elf file
+debug_info = True
+
+# source files
+# .c, .cpp or .S (NOT .s !!! for asm)
+# example: ['main.c', 'foo.c', 'lowlevel.S']
+sources = '''
+main.cpp
+'''.split()
+
+sys_sources = '''
+mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC/SVC_Table.S
+mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC/HAL_CM3.S
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_Timer.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_Time.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_Task.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_System.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_Semaphore.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_Robin.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_OsEventObserver.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_Mutex.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_Memory.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_MemBox.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_Mailbox.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_List.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_Event.c
+mbed-rtos/rtx/TARGET_CORTEX_M/rt_CMSIS.c
+mbed-rtos/rtx/TARGET_CORTEX_M/RTX_Conf_CM.c
+mbed-rtos/rtx/TARGET_CORTEX_M/HAL_CM.c
+mbed-rtos/rtos/rtos_idle.c
+mbed-rtos/rtos/Thread.cpp
+mbed-rtos/rtos/Semaphore.cpp
+mbed-rtos/rtos/RtosTimer.cpp
+mbed-rtos/rtos/Mutex.cpp
+'''.split()
+
+sys_objects = '''
+mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/system_LPC17xx.o
+mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/startup_LPC17xx.o
+mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/retarget.o
+mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/cmsis_nvic.o
+mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/board.o
+'''.split()
+
+include_dirs = '''
+mbed-rtos
+mbed-rtos/rtos
+mbed-rtos/rtx
+mbed-rtos/rtx/TARGET_CORTEX_M
+mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3
+mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC
+mbed
+mbed/TARGET_LPC1768
+mbed/TARGET_LPC1768/TARGET_NXP
+mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X
+mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X/TARGET_MBED_LPC1768
+mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM 
+'''.split()
+
+library_dirs = '''
+mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM
+'''.split()
+
+libraries = '''
+mbed
+'''.split()
+
+
+# additional options (e.g. '-I/path/to/mydir', '-lmylib')
+defines = '''
+TARGET_LPC1768
+DEVICE_ERROR_PATTERN=1
+__MBED__=1
+DEVICE_I2CSLAVE=1
+TARGET_LIKE_MBED
+TARGET_NXP
+TARGET_LPC176X
+__MBED_CMSIS_RTOS_CM
+DEVICE_RTC=1
+TOOLCHAIN_object
+__CMSIS_RTOS
+TOOLCHAIN_GCC
+DEVICE_CAN=1
+TARGET_LIKE_CORTEX_M3
+TARGET_CORTEX_M
+ARM_MATH_CM3
+DEVICE_ANALOGOUT=1
+TARGET_UVISOR_UNSUPPORTED
+TARGET_M3
+DEVICE_PWMOUT=1
+DEVICE_INTERRUPTIN=1
+DEVICE_I2C=1
+DEVICE_PORTOUT=1
+__CORTEX_M3
+DEVICE_STDIO_MESSAGES=1
+DEVICE_LOCALFILESYSTEM=1
+TARGET_RELEASE
+DEVICE_PORTINOUT=1
+DEVICE_SERIAL_FC=1
+TARGET_MBED_LPC1768
+DEVICE_PORTIN=1
+DEVICE_SLEEP=1
+TOOLCHAIN_GCC_ARM
+DEVICE_SPI=1
+DEVICE_ETHERNET=1
+DEVICE_SPISLAVE=1
+DEVICE_ANALOGIN=1
+DEVICE_SERIAL=1
+DEVICE_SEMIHOST=1
+DEVICE_DEBUG_AWARENESS=1
+MBED_BUILD_TIMESTAMP=1470142318.81 
+'''.split()
+
+common_flags = '''
+-c 
+-Wall 
+-Wextra 
+-Wno-unused-parameter
+-Wno-missing-field-initializers
+-fmessage-length=0
+-fno-exceptions
+-fno-builtin
+-ffunction-sections
+-fdata-sections
+-funsigned-char
+-MMD
+-fno-delete-null-pointer-checks
+-fomit-frame-pointer
+-MMD -MP
+-mthumb
+'''.split()
+
+c_flags = '''
+-std=gnu99
+'''.split()
+
+cpp_flags = '''
+-std=gnu++98 -fno-rtti -Wvla
+'''.split()
+
+asm_flags = '''
+-x assembler-with-cpp 
+'''.split()
+
+linker_flags = '''
+-Wl,--gc-sections
+-Wl,--wrap,main
+-Wl,--wrap,_malloc_r
+-Wl,--wrap,_free_r
+-Wl,--wrap,_realloc_r
+-mthumb
+'''.split()
+
+linker_libraries = '''
+stdc++ 
+supc++ 
+m 
+c 
+gcc 
+nosys
+'''.split()
+
+linker_script = 'mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/LPC1768.ld'
+
+# build directory - all output files will go here
+build_dir = 'build'
+
+
+# ------------ Config done ---------------
+
+common_flags += ['-O' + optlevel, '-mcpu=' + cpu]
+if debug_info:
+    common_flags += ['-g', '-gdwarf-2']
+
+linker_flags += ['-T' + linker_script, '-mcpu=' + cpu]
+
+# output format for hex
+hexformat = 'ihex'
+
+import os, re, SCons.Tool
+
+def toBuildDir(name):
+    'prepends the build dir to a path'
+    return os.path.join(build_dir, name)
+
+# transform target to full path
+target = toBuildDir(pname)
+
+# determine target files
+targetelf = target + '.elf'
+targethex = target + '.hex'
+targetbin = target + '.bin'
+targetdisasm = target + '.s'
+
+# transform all sources to full path
+sources = map(lambda x: toBuildDir(x), sources + sys_sources + sys_objects)
+
+# set output to build dir
+VariantDir(build_dir, '.', duplicate = 0)
+
+# create environment
+dummy = Environment()
+if re.search('^win', dummy['PLATFORM']):
+    print('Detected windows. Using MinGW')
+    env = Environment(ENV = os.environ, tools = ['mingw'])
+    Tool('mingw')(env)
+else:
+    env = Environment(ENV = os.environ)
+del dummy
+
+env['CCCOMSTR'] = "[compile c] $SOURCE"
+env['CXXCOMSTR'] = "[compile c++] $SOURCE"
+env['ASCOMSTR'] = "[compile asm] $SOURCE"
+env['ASPPCOMSTR'] = "[compile asm] $SOURCE"
+env['LINKCOMSTR'] = "[link] $SOURCE"
+
+env['PROGSUFFIX']   = '.elf'
+
+# executable names
+env['AS'] = 'arm-none-eabi-as'
+env['CC'] = 'arm-none-eabi-gcc'
+env['LINK'] = 'arm-none-eabi-gcc'
+env['CXX'] = 'arm-none-eabi-g++'
+env['OBJCOPY'] = 'arm-none-eabi-objcopy'
+env['OBJDUMP'] = 'arm-none-eabi-objdump'
+env['SIZE'] = 'arm-none-eabi-size'
+
+# set flags into the environment
+env.Append(CCFLAGS = common_flags)
+env.Append(CFLAGS = c_flags)
+env.Append(CXXFLAGS = cpp_flags)
+env.Append(ASFLAGS = asm_flags + common_flags)
+env.Append(LINKFLAGS = linker_flags)
+
+# build .elf
+env.Program(
+        target = targetelf, 
+        source = sources, 
+        LIBS = libraries + linker_libraries,
+        CPPPATH = include_dirs,
+        CPPDEFINES = defines,
+        LIBPATH = library_dirs
+)
+
+# build .hex
+env.Command(targethex, targetelf,
+    Action(env['OBJCOPY'] + ' -O ' + hexformat + ' $SOURCE $TARGET', "[generate] $TARGET")
+)
+
+# build .bin
+env.Command(targetbin, targetelf, 
+    Action(env['OBJCOPY'] + ' -O binary' + ' $SOURCE $TARGET', "[generate] $TARGET")
+)
+
+# create disassembly (.s)
+env.Command(targetdisasm, targetelf,
+    Action(env['OBJDUMP'] + ' -S $SOURCE > $TARGET', "[disassemble] $TARGET")
+)
+
+# display size
+env.Command('size', targetelf, 
+    Action(env['SIZE'] + ' $SOURCE', "\n\n >>>>>>>>> ")
+)
+
+# create target commands
+env.Alias('elf', targetelf)
+env.Alias('disasm', targetdisasm)
+env.Alias('hex', targethex)
+
+# default target (scons without parameters)
+Default(targetelf
+    , targethex
+    , targetdisasm
+    , targetbin
+    , 'size')
+
+# all done :)

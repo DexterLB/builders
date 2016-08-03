@@ -1,9 +1,3 @@
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
 # Precompiled Headers
 *.gch
 *.pch
@@ -34,4 +28,5 @@
 
 # SCons
 build
+build/
 .sconsign.dblite
