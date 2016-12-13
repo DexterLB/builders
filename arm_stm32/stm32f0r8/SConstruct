@@ -33,7 +33,7 @@ debug_info = True
 # .c, .cpp or .S (NOT .s !!! for asm)
 # example: ['main.c', 'foo.c', 'lowlevel.S']
 sources = '''
-main.cpp
+main.c
 '''.split()
 
 sys_sources = '''
