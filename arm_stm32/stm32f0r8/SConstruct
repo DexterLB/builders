@@ -55,6 +55,7 @@ include_dirs = '''
 '''.split()
 
 library_dirs = '''
+./cmsis
 '''.split()
 
 libraries = '''
