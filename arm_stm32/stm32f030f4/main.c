@@ -91,15 +91,15 @@ int main(void)
   GPIO_InitStruct.Pull  = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* -3- Toggle IOs in an infinite loop */
   while (1)
   {
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
     /* Insert delay 100 ms */
-    HAL_Delay(100);
+    HAL_Delay(1000);
   }
 }
 
