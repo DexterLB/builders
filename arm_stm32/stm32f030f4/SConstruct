@@ -24,7 +24,7 @@ cpu = 'cortex-m0'
 # optimisation level
 # can be 's' (size opt), '1', '2', '3' or '0' (not advised)
 # when debugging, it might be useful to set it to 1 or 0
-optlevel = '1'
+optlevel = '0'
 
 # save debug info to .elf file
 debug_info = True
