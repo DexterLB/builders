@@ -111,6 +111,9 @@ targetdostxt = target + '.dos.txt'
 targethex = target + '.hex'
 targetdisasm = target + '.s'
 
+# produce map file
+linker_flags += ['-Wl,-Map=' + target + '.map']
+
 # transform all sources to full path
 sources = map(lambda x: toBuildDir(x), sources)
 

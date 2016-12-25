@@ -217,6 +217,9 @@ targethex = target + '.hex'
 targetbin = target + '.bin'
 targetdisasm = target + '.s'
 
+# produce map file
+linker_flags += ['-Wl,-Map=' + target + '.map']
+
 # transform all sources to full path
 sources = map(lambda x: toBuildDir(x), sources + sys_sources + sys_objects)
 
