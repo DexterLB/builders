@@ -68,6 +68,8 @@ common_flags = '''
 -fshort-enums
 -funsigned-bitfields
 -funsigned-char
+-fdata-sections
+-ffunction-sections
 '''.split()
 
 c_flags = '''
@@ -83,6 +85,7 @@ asm_flags = '''
 '''.split()
 
 linker_flags = '''
+-Wl,--gc-sections
 '''.split()
 
 linker_libraries = '''
@@ -200,8 +203,8 @@ env.Append(LINKFLAGS = linker_flags)
 
 # build .elf
 env.Program(
-        target = targetelf, 
-        source = sources, 
+        target = targetelf,
+        source = sources,
         LIBS = libraries + linker_libraries,
         CPPPATH = include_dirs,
         CPPDEFINES = defines,
@@ -233,7 +236,7 @@ else:
     size_options = ' -A'
 
 # display size
-env.Command('size', targetelf, 
+env.Command('size', targetelf,
     Action(env['SIZE'] + size_options + ' $SOURCE', "\n ******** \n ")
 )
 
